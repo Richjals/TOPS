@@ -1,171 +1,52 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Aplikasi Operasional</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
-    body {
-      margin: 0;
-      padding: 16px;
-      font-family: system-ui, -apple-system, sans-serif;
-      background-color: #f1f5f9;
-      color: #1e293b;
-    }
-    .container {
-      max-width: 480px;
-      margin: 0 auto;
-    }
-    .card {
-      background: #ffffff;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-      margin-bottom: 16px;
-    }
-    h3 {
-      margin-top: 0;
-      margin-bottom: 16px;
-    }
-    label {
-      font-size: 14px;
-      font-weight: 600;
-      display: block;
-      margin-bottom: 6px;
-    }
-    input, select, textarea {
-      width: 100%;
-      padding: 12px;
-      margin-bottom: 16px;
-      border: 1px solid #cbd5e1;
-      border-radius: 8px;
-      font-size: 16px; /* Mencegah auto-zoom di HP */
-    }
-    button {
-      width: 100%;
-      padding: 12px;
-      background-color: #2563eb;
-      color: #ffffff;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    button.secondary {
-      background-color: #0f172a;
-      margin-bottom: 12px;
-    }
-    button:disabled {
-      background-color: #94a3b8;
-      cursor: not-allowed;
-    }
-    #status-log {
-      font-size: 14px;
-      padding: 12px;
-      border-radius: 8px;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-  </style>
-</head>
-<body>
+<script>
+  // POLYFILL: Otomatis mengubah semua google.script.run menjadi fetch() untuk GitHub Pages
+  (function() {
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyNGmxtdvON6McOPeRxc4O5QEgbc02fEI5hrKLPt5jHymLK_dccljq2gtQPpL13_e2e/exec";
 
-  <div class="container">
-    <!-- FORM INPUT DATA (POST) -->
-    <div class="card">
-      <h3>Kirim Data Baru</h3>
-      <form id="form-input" onsubmit="handleFormSubmit(event)">
-        <label for="nama">Nama / Unit</label>
-        <input type="text" id="nama" required placeholder="Contoh: Unit DT-01">
-
-        <label for="keterangan">Keterangan</label>
-        <input type="text" id="keterangan" required placeholder="Masukkan keterangan...">
-
-        <button type="submit" id="btn-kirim">Simpan Data</button>
-      </form>
-    </div>
-
-    <!-- PANEL AMBIL DATA (GET) & STATUS -->
-    <div class="card">
-      <h3>Data & Status Server</h3>
-      <button type="button" class="secondary" id="btn-ambil" onclick="ambilData()">Muat Data dari Spreadsheet</button>
-      <div id="status-log">Siap menerima perintah...</div>
-    </div>
-  </div>
-
-  <script>
-    // URL Web App Apps Script Anda
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyLEOE3O9_OKL4QssE9HLT_A8GPVS6WjiRxUqWTpg1o3J-79fXKwRSBSUuYzrz9TMCO/exec";
-
-    const logBox = document.getElementById("status-log");
-
-    // 1. Fungsi Mengambil Data dari Apps Script (GET)
-    async function ambilData() {
-      const btnAmbil = document.getElementById("btn-ambil");
-      btnAmbil.disabled = true;
-      btnAmbil.innerText = "Memuat data...";
-      logBox.innerText = "Sedang mengambil data dari server...";
-
-      try {
-        const response = await fetch(SCRIPT_URL);
-        const data = await response.json();
-        console.log("Data diterima:", data);
-        logBox.innerText = "Hasil GET:\n" + JSON.stringify(data, null, 2);
-      } catch (error) {
-        console.error(error);
-        logBox.innerText = "Gagal mengambil data. Pastikan doGet() di Apps Script mengembalikan JSON dan sudah di-deploy sebagai New Version.";
-      } finally {
-        btnAmbil.disabled = false;
-        btnAmbil.innerText = "Muat Data dari Spreadsheet";
+    if (typeof window.google === "undefined" || !window.google.script) {
+      function createRunner(successHandler, failureHandler) {
+        return new Proxy({}, {
+          get: function(_, prop) {
+            if (prop === "withSuccessHandler") {
+              return function(fn) { return createRunner(fn, failureHandler); };
+            }
+            if (prop === "withFailureHandler") {
+              return function(fn) { return createRunner(successHandler, fn); };
+            }
+            if (prop === "withUserObject") {
+              return function() { return createRunner(successHandler, failureHandler); };
+            }
+            // Saat fungsi seperti .login(...) atau .saveDaily(...) dipanggil:
+            return function(...args) {
+              fetch(SCRIPT_URL, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify({ action: prop, args: args })
+              })
+              .then(function(res) { return res.json(); })
+              .then(function(data) {
+                if (data && data.__rpc_ok) {
+                  if (typeof successHandler === "function") successHandler(data.result);
+                } else {
+                  const err = new Error((data && data.error) || "Terjadi kesalahan pada server.");
+                  if (typeof failureHandler === "function") failureHandler(err);
+                  else console.error(err);
+                }
+              })
+              .catch(function(err) {
+                if (typeof failureHandler === "function") failureHandler(err);
+                else console.error("Fetch Error:", err);
+              });
+            };
+          }
+        });
       }
-    }
 
-    // 2. Fungsi Mengirim Data ke Apps Script (POST)
-    async function kirimData(dataInput) {
-      const response = await fetch(SCRIPT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(dataInput)
-      });
-      const hasil = await response.json();
-      return hasil;
-    }
-
-    // 3. Handler Saat Tombol Simpan Diklik
-    async function handleFormSubmit(event) {
-      event.preventDefault();
-      const btnKirim = document.getElementById("btn-kirim");
-      btnKirim.disabled = true;
-      btnKirim.innerText = "Menyimpan...";
-      logBox.innerText = "Sedang mengirim data ke Spreadsheet...";
-
-      const dataInput = {
-        nama: document.getElementById("nama").value,
-        keterangan: document.getElementById("keterangan").value,
-        waktu: new Date().toLocaleString("id-ID")
+      window.google = {
+        script: {
+          run: createRunner(null, null)
+        }
       };
-
-      try {
-        const hasil = await kirimData(dataInput);
-        console.log("Respon server:", hasil);
-        logBox.innerText = "Berhasil disimpan!\nRespon: " + JSON.stringify(hasil, null, 2);
-        document.getElementById("form-input").reset();
-      } catch (error) {
-        console.error(error);
-        logBox.innerText = "Gagal mengirim data: " + error.message;
-      } finally {
-        btnKirim.disabled = false;
-        btnKirim.innerText = "Simpan Data";
-      }
     }
-  </script>
-
-</body>
-</html>
+  })();
+</script>
