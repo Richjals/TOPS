@@ -61,7 +61,7 @@
 
   <script>
     // Ganti dengan URL Web App (/exec) dari Google Apps Script Anda
-    const SCRIPT_URL = "MASUKKAN_URL_EXEC_APPS_SCRIPT_DI_SINI";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby18chop6Sjr8hS3rDNoDP0hztg5ZPwy0d-zlSwxzETxb4_lFnltwcB0UoN0yte_R0/exec";
 
     // 1. FUNGSI MENGIRIM DATA KE APPS SCRIPT (POST)
     async function kirimData(e) {
@@ -101,7 +101,7 @@
     // 2. FUNGSI MENGAMBIL DATA DARI APPS SCRIPT (GET)
     async function muatDataAwal() {
       try {
-        const response = await fetch(https://script.google.com/macros/s/AKfycby18chop6Sjr8hS3rDNoDP0hztg5ZPwy0d-zlSwxzETxb4_lFnltwcB0UoN0yte_R0/exec + "?action=ambilData");
+       const response = await fetch(SCRIPT_URL + "?action=ambilData");
         const data = await response.json();
         console.log("Data dari Spreadsheet:", data);
       } catch (error) {
