@@ -1,20 +1,116 @@
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwzLRn4WJ3kxzcmRQ1pBffW3Srt5Yk7dikXZCSh54HZZ0GPU0RZmKrPzb3iJTz3-73O/exec";
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <!-- Meta viewport wajib agar tampilan pas dan responsif di layar HP -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Aplikasi Operasional</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      margin: 0;
+      padding: 16px;
+      font-family: system-ui, -apple-system, sans-serif;
+      background-color: #f4f6f9;
+      color: #333;
+    }
+    .card {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    input, select, textarea, button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 8px;
+      margin-bottom: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px; /* Mencegah auto-zoom di HP */
+    }
+    button {
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:disabled {
+      background-color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
 
-// Contoh mengambil data dari Apps Script (GET)
-async function ambilData() {
-  const response = await fetch(SCRIPT_URL);
-  const data = await response.json();
-  console.log(data);
-}
+  <div class="card">
+    <h3>Input Data</h3>
+    <form id="form-data" onsubmit="kirimData(event)">
+      <label>Nama / Keterangan</label>
+      <input type="text" id="input-nama" required placeholder="Masukkan data...">
+      
+      <button type="submit" id="btn-kirim">Kirim Data</button>
+    </form>
+    <div id="status-pesan"></div>
+  </div>
 
-// Contoh mengirim data ke Apps Script (POST)
-async function kirimData(dataInput) {
-  // Menggunakan text/plain agar tidak terkena blokir CORS (preflight request) oleh browser
-  const response = await fetch(SCRIPT_URL, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify(dataInput)
-  });
-  const hasil = await response.json();
-  console.log(hasil);
-}
+  <script>
+    // Ganti dengan URL Web App (/exec) dari Google Apps Script Anda
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwzLRn4WJ3kxzcmRQ1pBffW3Srt5Yk7dikXZCSh54HZZ0GPU0RZmKrPzb3iJTz3-73O/exec";
+
+    // 1. FUNGSI MENGIRIM DATA KE APPS SCRIPT (POST)
+    async function kirimData(e) {
+      e.preventDefault();
+      const btn = document.getElementById("btn-kirim");
+      const status = document.getElementById("status-pesan");
+      
+      btn.disabled = true;
+      btn.innerText = "Mengirim...";
+
+      // Data yang akan dikirim ke fungsi doPost(e) di Apps Script
+      const payload = {
+        action: "simpan",
+        nama: document.getElementById("input-nama").value,
+        waktu: new Date().toISOString()
+      };
+
+      try {
+        // Penting: Gunakan text/plain agar browser tidak melakukan preflight OPTIONS yang diblokir Google
+        const response = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+
+        const hasil = await response.json();
+        status.innerText = "Berhasil: " + (hasil.status || "Data tersimpan!");
+        document.getElementById("form-data").reset();
+      } catch (error) {
+        status.innerText = "Gagal mengirim data: " + error.message;
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Kirim Data";
+      }
+    }
+
+    // 2. FUNGSI MENGAMBIL DATA DARI APPS SCRIPT (GET)
+    async function muatDataAwal() {
+      try {
+        const response = await fetch(SCRIPT_URL + "?action=ambilData");
+        const data = await response.json();
+        console.log("Data dari Spreadsheet:", data);
+      } catch (error) {
+        console.error("Gagal memuat data:", error);
+      }
+    }
+
+    // Jalankan muatDataAwal saat halaman pertama kali dibuka (opsional)
+    // window.onload = muatDataAwal;
+  </script>
+</body>
+</html>
